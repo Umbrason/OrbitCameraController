@@ -1,0 +1,13 @@
+{
+  "name": "com.umbrason.orbitcameracontroller",
+  "version": "1.0.0",
+  "displayName": "Orbit Camera Controller",
+  "description": "Orbit Camera Controller contains a customizable orbit camera controller",
+  "keywords": [
+    "Camera"
+  ],
+  "author": {
+    "name": "Umbrason"
+  },
+  "hideInEditor": false
+}
