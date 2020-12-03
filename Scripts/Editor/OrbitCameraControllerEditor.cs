@@ -73,7 +73,7 @@ public class OrbitCameraControllerEditor : Editor
         EditorGUILayout.PropertyField(rotationProperty.FindPropertyRelative("rotationButton"));
         EditorGUILayout.PropertyField(rotationProperty.FindPropertyRelative("rotationSensitivity"));
         EditorGUILayout.PropertyField(rotationProperty.FindPropertyRelative("easingBehaviour"));
-        EditorGUILayout.PropertyField(rotationProperty.FindPropertyRelative("rotationDamping"));
+        EditorGUILayout.PropertyField(rotationProperty.FindPropertyRelative("damping"));
         GUILayout.Space(subCategorySpacing);
         EditorGUILayout.PropertyField(rotationProperty.FindPropertyRelative("constrainX"));
         BeginConditionIndent(10f, rotationProperty.FindPropertyRelative("constrainX").boolValue);
