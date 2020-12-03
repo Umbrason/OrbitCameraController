@@ -55,6 +55,7 @@ public class OrbitCameraControllerEditor : Editor
         GUILayout.Space(subCategorySpacing);
         EditorGUILayout.PropertyField(movementProperty.FindPropertyRelative("surfaceFollowType"));
         BeginConditionIndent(10f, movementProperty.FindPropertyRelative("surfaceFollowType").enumValueIndex != (int)MovementSettings.SurfaceFollowType.None);
+        EditorGUILayout.PropertyField(rotationProperty.FindPropertyRelative("damping"));
         EditorGUILayout.PropertyField(movementProperty.FindPropertyRelative("allowFlight"));
         EditorGUILayout.PropertyField(movementProperty.FindPropertyRelative("surfaceCheckRange"));
         EditorGUILayout.PropertyField(movementProperty.FindPropertyRelative("groundMask"));
@@ -72,6 +73,7 @@ public class OrbitCameraControllerEditor : Editor
         EditorGUILayout.PropertyField(rotationProperty.FindPropertyRelative("rotationButton"));
         EditorGUILayout.PropertyField(rotationProperty.FindPropertyRelative("rotationSensitivity"));
         EditorGUILayout.PropertyField(rotationProperty.FindPropertyRelative("easingBehaviour"));
+        EditorGUILayout.PropertyField(rotationProperty.FindPropertyRelative("rotationDamping"));
         GUILayout.Space(subCategorySpacing);
         EditorGUILayout.PropertyField(rotationProperty.FindPropertyRelative("constrainX"));
         BeginConditionIndent(10f, rotationProperty.FindPropertyRelative("constrainX").boolValue);
