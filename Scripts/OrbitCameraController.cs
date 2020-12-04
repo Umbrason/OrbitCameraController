@@ -56,7 +56,7 @@ public class OrbitCameraController : MonoBehaviour
                         break;
                     case MovementSettings.SurfaceFollowType.MatchSurfaceSmooth:
 
-                        transform.position = Vector3.Lerp(desiredPosition, hit.point, 1 - Mathf.Pow(1f / movementSettings.damping, Time.deltaTime));
+                        transform.position = Vector3.Lerp(hit.point, desiredPosition, 1 - Mathf.Pow(1f / movementSettings.damping, Time.deltaTime));
                         break;
                 }
             }
@@ -77,13 +77,13 @@ public class OrbitCameraController : MonoBehaviour
             desiredRotationSpeed.y = rotationInput.x;
             desiredRotationSpeed /= 10f;
             if (rotationSettings.easingBehaviour == RotationSettings.RotationEasing.Always)
-                rotationSpeed = Vector2.Lerp(rotationSpeed, desiredRotationSpeed, 1 - Mathf.Pow(1f / rotationSettings.smoothness, Time.deltaTime));
+                rotationSpeed = Vector2.Lerp(desiredRotationSpeed, rotationSpeed, 1 - Mathf.Pow(1f / rotationSettings.smoothness, Time.deltaTime));
             else
                 rotationSpeed = desiredRotationSpeed;
         }
         else if (rotationSettings.easingBehaviour != RotationSettings.RotationEasing.None)
         {
-            rotationSpeed = Vector2.Lerp(rotationSpeed, Vector2.zero, 1 - Mathf.Pow(1f / rotationSettings.smoothness, Time.deltaTime));
+            rotationSpeed = Vector2.Lerp(Vector2.zero, rotationSpeed, 1 - Mathf.Pow(1f / rotationSettings.smoothness, Time.deltaTime));
         }
         else rotationSpeed = Vector2.zero;
 
