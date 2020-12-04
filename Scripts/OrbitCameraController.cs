@@ -55,11 +55,8 @@ public class OrbitCameraController : MonoBehaviour
                         transform.position = hit.point;
                         break;
                     case MovementSettings.SurfaceFollowType.MatchSurfaceSmooth:
-<<<<<<< Updated upstream
-                        transform.position = Vector3.Lerp(desiredPosition, hit.point, Mathf.Pow(.3f / movementSettings.damping, Time.deltaTime));
-=======
+
                         transform.position = Vector3.Lerp(desiredPosition, hit.point, 1 - Mathf.Pow(1f / movementSettings.damping, Time.deltaTime));
->>>>>>> Stashed changes
                         break;
                 }
             }
@@ -80,21 +77,13 @@ public class OrbitCameraController : MonoBehaviour
             desiredRotationSpeed.y = rotationInput.x;
             desiredRotationSpeed /= 10f;
             if (rotationSettings.easingBehaviour == RotationSettings.RotationEasing.Always)
-<<<<<<< Updated upstream
-                rotationSpeed = Vector2.Lerp(rotationSpeed, desiredRotationSpeed, Mathf.Pow(.3f / rotationSettings.damping, Time.deltaTime));
-=======
                 rotationSpeed = Vector2.Lerp(rotationSpeed, desiredRotationSpeed, 1 - Mathf.Pow(1f / rotationSettings.smoothness, Time.deltaTime));
->>>>>>> Stashed changes
             else
                 rotationSpeed = desiredRotationSpeed;
         }
         else if (rotationSettings.easingBehaviour != RotationSettings.RotationEasing.None)
         {
-<<<<<<< Updated upstream
-            rotationSpeed = Vector2.Lerp(rotationSpeed, Vector2.zero, Mathf.Pow(.2f / rotationSettings.damping, Time.deltaTime));
-=======
             rotationSpeed = Vector2.Lerp(rotationSpeed, Vector2.zero, 1 - Mathf.Pow(1f / rotationSettings.smoothness, Time.deltaTime));
->>>>>>> Stashed changes
         }
         else rotationSpeed = Vector2.zero;
 
@@ -177,7 +166,7 @@ public class RotationSettings
     public enum MouseButton { Left = 0, Right = 1, Middle = 2 }
     public MouseButton rotationButton;
     public float rotationSensitivity = 24f;
-    public float damping = 1f;
+    public float smoothness = 1f;
     public bool constrainX, constrainY;
     public Vector2 rotationConstraintsX, rotationConstraintsY;
 }
