@@ -77,13 +77,13 @@ public class OrbitCameraController : MonoBehaviour
             desiredRotationSpeed.y = rotationInput.x;
             desiredRotationSpeed /= 10f;
             if (rotationSettings.easingBehaviour == RotationSettings.RotationEasing.Always)
-                rotationSpeed = Vector2.Lerp(rotationSpeed, desiredRotationSpeed, 1 - Mathf.Pow(rotationSettings.smoothness * .99f, Time.deltaTime));
+                rotationSpeed = Vector2.Lerp(rotationSpeed, desiredRotationSpeed, 1 - Mathf.Pow(rotationSettings.smoothness * rotationSettings.smoothness * .2f, Time.deltaTime));
             else
                 rotationSpeed = desiredRotationSpeed;
         }
         else if (rotationSettings.easingBehaviour != RotationSettings.RotationEasing.None)
         {
-            rotationSpeed = Vector2.Lerp(rotationSpeed, Vector2.zero, 1 - Mathf.Pow(rotationSettings.smoothness* .66f, Time.deltaTime));
+            rotationSpeed = Vector2.Lerp(rotationSpeed, Vector2.zero, 1 - Mathf.Pow(rotationSettings.smoothness * rotationSettings.smoothness * .1f, Time.deltaTime));
         }
         else rotationSpeed = Vector2.zero;
 
