@@ -1,6 +1,10 @@
 {
   "name": "com.umbrason.orbitcameracontroller",
+<<<<<<< Updated upstream
   "version": "1.0.1",
+=======
+  "version": "1.1.1",
+>>>>>>> Stashed changes
   "displayName": "Orbit Camera Controller",
   "description": "Orbit Camera Controller contains a customizable orbit camera controller",
   "keywords": [
