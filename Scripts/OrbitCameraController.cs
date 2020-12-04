@@ -56,7 +56,7 @@ public class OrbitCameraController : MonoBehaviour
                         break;
                     case MovementSettings.SurfaceFollowType.MatchSurfaceSmooth:
 
-                        transform.position = Vector3.Lerp(desiredPosition, hit.point, 1 - Mathf.Pow(movementSettings.smoothness * movementSettings.smoothness * .2f, Time.deltaTime));
+                        transform.position = Vector3.Lerp(desiredPosition, hit.point, 1 - Mathf.Pow(movementSettings.smoothness * movementSettings.smoothness * .02f, Time.deltaTime));
                         break;
                 }
             }
