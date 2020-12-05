@@ -38,33 +38,44 @@ public class OrbitCameraController : MonoBehaviour
         DoZoom();
     }
 
-
     private void DoMovement()
     {
         float speed = movementSettings.movementSpeed * (Input.GetKey(KeyCode.LeftShift) ? movementSettings.sprintSpeedMultiplier : 1) * Time.deltaTime;
         Vector3 movementInput = Quaternion.Euler(0, CurrentRotation.y, 0) * new Vector3(Input.GetAxisRaw("Horizontal"), 0, Input.GetAxisRaw("Vertical"));
         Vector3 desiredPosition = transform.position + movementInput * speed;
+        Vector3 finalPosition = desiredPosition;
 
+        //math surface height
         if (movementSettings.surfaceFollowType != MovementSettings.SurfaceFollowType.None)
         {
             if (Physics.Raycast(desiredPosition + Vector3.up * movementSettings.surfaceCheckRange, Vector3.down, out RaycastHit hit, movementSettings.surfaceCheckRange * 2f, movementSettings.groundMask))
             {
-                switch (movementSettings.surfaceFollowType)
+                switch (movementSettings.collisionDetection)
                 {
-                    case MovementSettings.SurfaceFollowType.MatchSurfaceInstant:
-                        transform.position = hit.point;
+                    case MovementSettings.CollisionDetectionMethod.None:
+                        finalPosition = hit.point;
                         break;
-                    case MovementSettings.SurfaceFollowType.MatchSurfaceSmooth:
-
-                        transform.position = Vector3.Lerp(desiredPosition, hit.point, 1 - Mathf.Pow(movementSettings.smoothness * movementSettings.smoothness * .02f, Time.deltaTime));
+                    case MovementSettings.CollisionDetectionMethod.SweepTest:
+                        bool hitBackfaces = Physics.queriesHitBackfaces;
+                        Physics.queriesHitBackfaces = true;
+                        if (Physics.RaycastAll(desiredPosition, Vector3.up, movementSettings.surfaceCheckRange, movementSettings.groundMask).Length % 2 == 1)
+                            if (physics.Raycast(desiredPosition, Vector3.up, out hit, movementSettings.surfaceCheckRange, movementSettings.groundMask))
+                                finalPosition = hit.point;
+                        Physics.queriesHitBackfaces = hitBackfaces;
                         break;
                 }
             }
-            else if (movementSettings.allowFlight)
-                transform.position = desiredPosition;
+            switch (movementSettings.surfaceFollowType)
+            {
+                case MovementSettings.SurfaceFollowType.MatchSurfaceInstant:
+                    desiredPosition = finalPosition;
+                    break;
+                case MovementSettings.SurfaceFollowType.MatchSurfaceSmooth:
+                    desiredPosition = Vector3.Lerp(desiredPosition, finalPosition, 1 - Mathf.Pow(movementSettings.smoothness * movementSettings.smoothness * .02f, Time.deltaTime));
+                    break;
+            }
         }
-        else
-            transform.position = desiredPosition;
+        transform.position = desiredPosition;
     }
 
     private void DoRotation()
@@ -118,7 +129,6 @@ public class OrbitCameraController : MonoBehaviour
                 Physics.queriesHitBackfaces = true;
                 if (Physics.RaycastAll(transform.position - absoluteTargetZoom * transform.forward, Vector3.up, 1000f, zoomSettings.collisionLayerMask).Length % 2 == 1)
                 {
-
                     if (Physics.Raycast(transform.position - absoluteTargetZoom * transform.forward, transform.forward, out RaycastHit backfaceHit, absoluteTargetZoom, zoomSettings.collisionLayerMask))
                         absoluteTargetZoom = Vector3.Distance(backfaceHit.point, transform.position) - .05f;
                 }
@@ -128,7 +138,7 @@ public class OrbitCameraController : MonoBehaviour
             case ZoomSettings.CollisionDetectionMethod.RaycastFromCenter:
                 if (Physics.Raycast(transform.position, -transform.forward, out RaycastHit hit, absoluteTargetZoom, zoomSettings.collisionLayerMask))
                 {
-
+                    absoluteTargetZoom = Vector3.Distance(hit.point, transform.position) - .05f;
                 }
                 break;
         }
@@ -140,21 +150,30 @@ public class OrbitCameraController : MonoBehaviour
 [System.Serializable]
 public class MovementSettings
 {
+    [Tooltip("Base speed of the controller. Set to '0' to disable movement")]
     public float movementSpeed = 3f;
-    [Tooltip("modifies speed when holding 'left-shift'")]
+
+    [Tooltip("Modifies speed when holding 'left-shift'")]
     public float sprintSpeedMultiplier = 2f;
 
-    [Tooltip("if false, constraints the controller to surfaces")]
+    [Tooltip("When disabled, constraints the controller to move only on collider surfaces")]
     public bool allowFlight = false;
+
     public enum SurfaceFollowType { None, MatchSurfaceInstant, MatchSurfaceSmooth }
-    [Tooltip("controls how the controller follows surface heights")]
+    [Tooltip("Controls how the controller follows surface heights")]
     public SurfaceFollowType surfaceFollowType;
-    [Tooltip("maximum height difference")]
+
+    public enum CollisionDetectionMethod { None, SweepTest }
+    [Tooltip("When should the controller update the current target height?")]
+    public CollisionDetectionMethod collisionDetection = CollisionDetectionMethod.SweepTest;
+
+    [Tooltip("Maximum height difference the controller checks for new surface collisions at")]
     public float surfaceCheckRange = 50f;
 
-    [Tooltip("Layer mask containing the ground layer")]
+    [Tooltip("Layer mask containing only the ground layer(s)")]
     public LayerMask groundMask;
-    [Tooltip("speed at which the controller follows the surface if MatchSurfaceSmooth is active")]
+
+    [Tooltip("Delay with which the controller follows the surface if MatchSurfaceSmooth is active")]
     public float smoothness = 1f;
 }
 
@@ -162,12 +181,20 @@ public class MovementSettings
 public class RotationSettings
 {
     public enum RotationEasing { None, Always, Subtle }
+    [Tooltip("Controls, how the rotation input is smoothed")]
     public RotationEasing easingBehaviour;
     public enum MouseButton { Left = 0, Right = 1, Middle = 2 }
+    [Tooltip("Determines, what mouse button is responsible for rotating this camera")]
     public MouseButton rotationButton;
+    [Tooltip("Speeds up the rotation")]
     public float rotationSensitivity = 24f;
+    [Tooltip("The amount of smoothing applied to the rotation input")]
     public float smoothness = 1f;
-    public bool constrainX, constrainY;
+    [Tooltip("When enabled, constraints the rotation on the X axis (vertical rotation)")]
+    public bool constrainX;
+    [Tooltip("When enabled, constraints the rotation on the Y axis (horizontal rotation)")]
+    public bool constrainY;
+    [Tooltip("Lower and upper rotation angle limit")]
     public Vector2 rotationConstraintsX, rotationConstraintsY;
 }
 
@@ -176,11 +203,16 @@ public class RotationSettings
 [System.Serializable]
 public class ZoomSettings
 {
+    [Tooltip("Minimum and maximum distance of the camera to its orbit center")]
     public Vector2 zoomRange = new Vector2(1f, 15f);
+    [Tooltip("Dynamicaly zooms in, to provide the camera from clipping inside of geometry")]
     public bool autoZoomIn = true;
     public enum CollisionDetectionMethod { None, RaycastFromCenter, SweepTest }
+    [Tooltip("How should the controller determine, whether the camera is inside geometry or not?")]
     public CollisionDetectionMethod collisionDetection = CollisionDetectionMethod.SweepTest;
+    [Tooltip("Speeds up zooming in and out")]
     public float zoomSensitivity = 4f;
+    [Tooltip("Layermask used to determine, whether the camera is inside geometry or not")]
     public LayerMask collisionLayerMask;
 
 }
