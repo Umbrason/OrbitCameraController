@@ -45,9 +45,11 @@ public class OrbitCameraController : MonoBehaviour
         Vector3 desiredPosition = transform.position + movementInput * speed;
         Vector3 finalPosition = desiredPosition;
 
-        //math surface height
+        //match surface height
         if (movementSettings.surfaceFollowType != MovementSettings.SurfaceFollowType.None)
         {
+            //if (Physics.Raycast(desiredPosition, Vector3.down, out RaycastHit hit, movementSettings.surfaceCheckRange * 2f, movementSettings.groundMask))
+            //    desiredPosition = hit.point + Vector3.up * 0.05f;
             if (Physics.Raycast(desiredPosition + Vector3.up * movementSettings.surfaceCheckRange, Vector3.down, out RaycastHit hit, movementSettings.surfaceCheckRange * 2f, movementSettings.groundMask))
             {
                 switch (movementSettings.collisionDetection)
@@ -59,8 +61,20 @@ public class OrbitCameraController : MonoBehaviour
                         bool hitBackfaces = Physics.queriesHitBackfaces;
                         Physics.queriesHitBackfaces = true;
                         if (Physics.RaycastAll(desiredPosition, Vector3.up, movementSettings.surfaceCheckRange, movementSettings.groundMask).Length % 2 == 1)
-                            if (Physics.Raycast(desiredPosition, Vector3.up, out hit, movementSettings.surfaceCheckRange, movementSettings.groundMask))
+                        {
+                            Physics.queriesHitBackfaces = false;
+                            float upperHitDistance = movementSettings.surfaceCheckRange;
+                            if (Physics.Raycast(desiredPosition, Vector3.down, out hit, movementSettings.surfaceCheckRange, movementSettings.groundMask)){
                                 finalPosition = hit.point;
+                                upperHitDistance = hit.distance;
+                            }
+                            Physics.queriesHitBackfaces = true;
+                            if (Physics.Raycast(desiredPosition, Vector3.up, out hit, movementSettings.surfaceCheckRange, movementSettings.groundMask))
+                                if (hit.distance < upperHitDistance)
+                                    finalPosition = hit.point;
+                        }
+                        else if (Physics.Raycast(desiredPosition, Vector3.down, out hit, movementSettings.surfaceCheckRange, movementSettings.groundMask))
+                            finalPosition = hit.point;
                         Physics.queriesHitBackfaces = hitBackfaces;
                         break;
                 }
@@ -129,7 +143,7 @@ public class OrbitCameraController : MonoBehaviour
                 Physics.queriesHitBackfaces = true;
                 if (Physics.RaycastAll(transform.position - absoluteTargetZoom * transform.forward, Vector3.up, 1000f, zoomSettings.collisionLayerMask).Length % 2 == 1)
                 {
-                    if (Physics.Raycast(transform.position - absoluteTargetZoom * transform.forward, transform.forward, out RaycastHit backfaceHit, absoluteTargetZoom, zoomSettings.collisionLayerMask))
+                    if (Physics.Raycast(transform.position - absoluteTargetZoom * transform.forward, transform.forward, out RaycastHit backfaceHit, absoluteTargetZoom + 0.05f, zoomSettings.collisionLayerMask))
                         absoluteTargetZoom = Vector3.Distance(backfaceHit.point, transform.position) - .05f;
                 }
                 Physics.queriesHitBackfaces = hitBackfaces;

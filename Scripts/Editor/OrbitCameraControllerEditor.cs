@@ -55,6 +55,7 @@ public class OrbitCameraControllerEditor : Editor
         GUILayout.Space(subCategorySpacing);
         EditorGUILayout.PropertyField(movementProperty.FindPropertyRelative("surfaceFollowType"));
         BeginConditionIndent(10f, movementProperty.FindPropertyRelative("surfaceFollowType").enumValueIndex != (int)MovementSettings.SurfaceFollowType.None);
+        EditorGUILayout.PropertyField(movementProperty.FindPropertyRelative("collisionDetection"));
         EditorGUILayout.PropertyField(movementProperty.FindPropertyRelative("smoothness"));
         EditorGUILayout.PropertyField(movementProperty.FindPropertyRelative("allowFlight"));
         EditorGUILayout.PropertyField(movementProperty.FindPropertyRelative("surfaceCheckRange"));
