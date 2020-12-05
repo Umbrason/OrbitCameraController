@@ -59,7 +59,7 @@ public class OrbitCameraController : MonoBehaviour
                         bool hitBackfaces = Physics.queriesHitBackfaces;
                         Physics.queriesHitBackfaces = true;
                         if (Physics.RaycastAll(desiredPosition, Vector3.up, movementSettings.surfaceCheckRange, movementSettings.groundMask).Length % 2 == 1)
-                            if (physics.Raycast(desiredPosition, Vector3.up, out hit, movementSettings.surfaceCheckRange, movementSettings.groundMask))
+                            if (Physics.Raycast(desiredPosition, Vector3.up, out hit, movementSettings.surfaceCheckRange, movementSettings.groundMask))
                                 finalPosition = hit.point;
                         Physics.queriesHitBackfaces = hitBackfaces;
                         break;
