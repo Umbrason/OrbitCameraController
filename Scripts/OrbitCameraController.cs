@@ -33,12 +33,15 @@ public class OrbitCameraController : MonoBehaviour
 
     public void Update()
     {
-        DoRotation();
-        DoMovement();
+        DoKeyboardMovement();
         DoZoom();
+        if (Input.GetMouseButton((int)rotationSettings.rotationButton))
+            HandleMouseButton();
+
+        DecreaseRotationSpeed();
     }
 
-    private void DoMovement()
+    private void DoKeyboardMovement()
     {
         float speed = movementSettings.movementSpeed * (Input.GetKey(KeyCode.LeftShift) ? movementSettings.sprintSpeedMultiplier : 1) * Time.deltaTime;
         Vector3 movementInput = Quaternion.Euler(0, CurrentRotation.y, 0) * new Vector3(Input.GetAxisRaw("Horizontal"), 0, Input.GetAxisRaw("Vertical"));
@@ -64,7 +67,8 @@ public class OrbitCameraController : MonoBehaviour
                         {
                             Physics.queriesHitBackfaces = false;
                             float upperHitDistance = movementSettings.surfaceCheckRange;
-                            if (Physics.Raycast(desiredPosition, Vector3.down, out hit, movementSettings.surfaceCheckRange, movementSettings.groundMask)){
+                            if (Physics.Raycast(desiredPosition, Vector3.down, out hit, movementSettings.surfaceCheckRange, movementSettings.groundMask))
+                            {
                                 finalPosition = hit.point;
                                 upperHitDistance = hit.distance;
                             }
@@ -92,9 +96,17 @@ public class OrbitCameraController : MonoBehaviour
         transform.position = desiredPosition;
     }
 
-    private void DoRotation()
+    private void HandleMouseButton()
     {
-        if (Input.GetMouseButton((int)rotationSettings.rotationButton))
+        if (Input.GetKey(KeyCode.LeftShift))
+        {
+            rotationSpeed = Vector2.zero;
+        }
+        else if (Input.GetKey(KeyCode.LeftControl))
+        {
+            rotationSpeed = Vector2.zero;
+        }
+        else
         {
             Vector2 rotationInput = new Vector2(Input.GetAxis("Mouse X"), Input.GetAxis("Mouse Y")) * rotationSettings.rotationSensitivity;
             Vector2 desiredRotationSpeed;
@@ -106,12 +118,10 @@ public class OrbitCameraController : MonoBehaviour
             else
                 rotationSpeed = desiredRotationSpeed;
         }
-        else if (rotationSettings.easingBehaviour != RotationSettings.RotationEasing.None)
-        {
-            rotationSpeed = Vector2.Lerp(rotationSpeed, Vector2.zero, 1 - Mathf.Pow(rotationSettings.smoothness * rotationSettings.smoothness * .1f, Time.deltaTime));
-        }
-        else rotationSpeed = Vector2.zero;
+    }
 
+    private void UpdateRotation()
+    {
         float rX = CurrentRotation.x > 180 ? CurrentRotation.x - 360 : CurrentRotation.x;
         rX += rotationSpeed.x;
         if (rotationSettings.constrainX)
@@ -120,9 +130,16 @@ public class OrbitCameraController : MonoBehaviour
         float rY = CurrentRotation.y + rotationSpeed.y;
         if (rotationSettings.constrainY)
             rY = Mathf.Clamp(rY, rotationSettings.rotationConstraintsY.x, rotationSettings.rotationConstraintsY.y);
-
         transform.rotation = Quaternion.Euler(rX, rY, CurrentRotation.z);
+    }
 
+    private void DecreaseRotationSpeed()
+    {
+        if (rotationSettings.easingBehaviour != RotationSettings.RotationEasing.None)
+        {
+            rotationSpeed = Vector2.Lerp(rotationSpeed, Vector2.zero, 1 - Mathf.Pow(rotationSettings.smoothness * rotationSettings.smoothness * .1f, Time.deltaTime));
+        }
+        else rotationSpeed = Vector2.zero;
     }
 
 
