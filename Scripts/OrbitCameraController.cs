@@ -88,11 +88,8 @@ public class OrbitCameraController : MonoBehaviour
                 }
                 break;
             case CameraControllerState.MovRot:
-                if (!(IsMouseDown || keyboardInput.sqrMagnitude < .1f || Input.GetKey(KeyCode.LeftShift)))
-                {
-                    state = CameraControllerState.Free;
+                if (IsMouseDown || keyboardInput.sqrMagnitude < .1f || Input.GetKey(KeyCode.LeftShift))                                    
                     return;
-                }
                 break;
         }
         if (IsMouseDown && Input.GetKey(KeyCode.LeftShift))
