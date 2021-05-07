@@ -11,9 +11,25 @@ public class OrbitCameraController : MonoBehaviour
     public MovementSettings movementSettings;
 
     private Vector3 CurrentRotation { get { return transform.eulerAngles; } }
+    private Vector3 keyboardInput { get { return new Vector3(Input.GetAxisRaw("Horizontal"), 0, Input.GetAxisRaw("Vertical")); } }
+    private bool IsMouseDown { get { return Input.GetMouseButton((int)rotationSettings.rotationButton); } }
     private Vector2 rotationSpeed;
+    private Vector2 oldMousePosition;
 
     private float normalizedTargetZoom = .5f;
+
+    private float AbsoluteTargetZoom { get { return Mathf.Lerp(zoomSettings.zoomRange.x, zoomSettings.zoomRange.y, normalizedTargetZoom); } set { normalizedTargetZoom = Mathf.InverseLerp(zoomSettings.zoomRange.x, zoomSettings.zoomRange.y, value); } }
+
+
+
+    private enum CameraControllerState
+    {
+        Free,
+        MovRot,
+        Pan,
+        Zoom
+    }
+    private CameraControllerState state;
 
 
     public void OnEnable()
@@ -33,12 +49,59 @@ public class OrbitCameraController : MonoBehaviour
 
     public void Update()
     {
-        DoKeyboardMovement();
-        DoZoom();
-        if (Input.GetMouseButton((int)rotationSettings.rotationButton))
-            HandleMouseButton();
-
+        UpdateState();
+        switch (state)
+        {
+            case CameraControllerState.MovRot:
+                DoKeyboardMovement();
+                DoMouseWheelZoom();
+                DoMouseRotation();
+                break;
+            case CameraControllerState.Pan:
+                if (IsMouseDown)
+                    DoMousePan();
+                break;
+            case CameraControllerState.Zoom:
+                if (IsMouseDown)
+                    DoMouseZoom();
+                break;
+        }
+        UpdateRotation();
+        UpdateZoom();
         DecreaseRotationSpeed();
+        oldMousePosition = Input.mousePosition;
+    }
+
+    private void UpdateState()
+    {
+        switch (state)
+        {
+            case CameraControllerState.Free:
+                if (keyboardInput.sqrMagnitude > .01f || (IsMouseDown && !(Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.LeftControl))))
+                {
+                    state = CameraControllerState.MovRot;
+                    return;
+                }
+                break;
+            case CameraControllerState.MovRot:
+                if (!(IsMouseDown || keyboardInput.sqrMagnitude < .1f || Input.GetKey(KeyCode.LeftShift)))
+                {
+                    state = CameraControllerState.Free;
+                    return;
+                }
+                break;
+        }
+        if (IsMouseDown && Input.GetKey(KeyCode.LeftShift))
+        {
+            state = CameraControllerState.Pan;
+            return;
+        }
+        if (IsMouseDown && Input.GetKey(KeyCode.LeftControl))
+        {
+            state = CameraControllerState.Zoom;
+            return;
+        }
+        state = CameraControllerState.Free;
     }
 
     private void DoKeyboardMovement()
@@ -51,8 +114,6 @@ public class OrbitCameraController : MonoBehaviour
         //match surface height
         if (movementSettings.surfaceFollowType != MovementSettings.SurfaceFollowType.None)
         {
-            //if (Physics.Raycast(desiredPosition, Vector3.down, out RaycastHit hit, movementSettings.surfaceCheckRange * 2f, movementSettings.groundMask))
-            //    desiredPosition = hit.point + Vector3.up * 0.05f;
             if (Physics.Raycast(desiredPosition + Vector3.up * movementSettings.surfaceCheckRange, Vector3.down, out RaycastHit hit, movementSettings.surfaceCheckRange * 2f, movementSettings.groundMask))
             {
                 switch (movementSettings.collisionDetection)
@@ -96,28 +157,47 @@ public class OrbitCameraController : MonoBehaviour
         transform.position = desiredPosition;
     }
 
-    private void HandleMouseButton()
+    private void DoMousePan()
     {
-        if (Input.GetKey(KeyCode.LeftShift))
-        {
-            rotationSpeed = Vector2.zero;
-        }
-        else if (Input.GetKey(KeyCode.LeftControl))
-        {
-            rotationSpeed = Vector2.zero;
-        }
+        Vector2 startMousePosition = oldMousePosition;
+        Vector2 endMousePosition = Input.mousePosition;
+        Vector3 deltaPosition = ScreenPointToWorldXZPlane(transform.position.y, endMousePosition) - ScreenPointToWorldXZPlane(transform.position.y, startMousePosition);
+        deltaPosition = Vector3.ClampMagnitude(deltaPosition, zoomSettings.zoomRange.y * zoomSettings.zoomRange.y * Time.deltaTime);
+        transform.position -= deltaPosition;
+    }
+
+    private Vector3 ScreenPointToWorldXZPlane(float worldHeight, Vector3 screenPoint)
+    {
+        Ray ray = this.cameraComponent.ScreenPointToRay(screenPoint);
+        float t = (ray.origin.y - worldHeight) / -ray.direction.y;
+        return ray.origin + t * ray.direction;
+    }
+
+    private void DoMouseZoom()
+    {
+        float zoomInput = Input.GetAxis("Mouse Y") * zoomSettings.zoomSensitivity / Screen.height * 18f;
+        AbsoluteTargetZoom = Mathf.Lerp(AbsoluteTargetZoom, AbsoluteTargetZoom - zoomInput * (zoomSettings.zoomRange.y - zoomSettings.zoomRange.x), .3f);
+    }
+
+    private void DoMouseWheelZoom()
+    {
+        float zoomInput = Input.GetAxis("Mouse ScrollWheel") * zoomSettings.zoomSensitivity;
+        AbsoluteTargetZoom = Mathf.Lerp(AbsoluteTargetZoom, AbsoluteTargetZoom - zoomInput * (zoomSettings.zoomRange.y - zoomSettings.zoomRange.x), .3f);
+    }
+
+    private void DoMouseRotation()
+    {
+        if (!IsMouseDown)
+            return;
+        Vector2 rotationInput = new Vector2(Input.GetAxis("Mouse X"), Input.GetAxis("Mouse Y")) * rotationSettings.rotationSensitivity;
+        Vector2 desiredRotationSpeed;
+        desiredRotationSpeed.x = -rotationInput.y;
+        desiredRotationSpeed.y = rotationInput.x;
+        desiredRotationSpeed /= 10f;
+        if (rotationSettings.easingBehaviour == RotationSettings.RotationEasing.Always)
+            rotationSpeed = Vector2.Lerp(rotationSpeed, desiredRotationSpeed, 1 - Mathf.Pow(rotationSettings.smoothness * rotationSettings.smoothness * .2f / 100f, Time.deltaTime));
         else
-        {
-            Vector2 rotationInput = new Vector2(Input.GetAxis("Mouse X"), Input.GetAxis("Mouse Y")) * rotationSettings.rotationSensitivity;
-            Vector2 desiredRotationSpeed;
-            desiredRotationSpeed.x = -rotationInput.y;
-            desiredRotationSpeed.y = rotationInput.x;
-            desiredRotationSpeed /= 10f;
-            if (rotationSettings.easingBehaviour == RotationSettings.RotationEasing.Always)
-                rotationSpeed = Vector2.Lerp(rotationSpeed, desiredRotationSpeed, 1 - Mathf.Pow(rotationSettings.smoothness * rotationSettings.smoothness * .2f, Time.deltaTime));
-            else
-                rotationSpeed = desiredRotationSpeed;
-        }
+            rotationSpeed = desiredRotationSpeed;
     }
 
     private void UpdateRotation()
@@ -137,18 +217,14 @@ public class OrbitCameraController : MonoBehaviour
     {
         if (rotationSettings.easingBehaviour != RotationSettings.RotationEasing.None)
         {
-            rotationSpeed = Vector2.Lerp(rotationSpeed, Vector2.zero, 1 - Mathf.Pow(rotationSettings.smoothness * rotationSettings.smoothness * .1f, Time.deltaTime));
+            rotationSpeed = Vector2.Lerp(rotationSpeed, Vector2.zero, 1 - Mathf.Pow(rotationSettings.smoothness * rotationSettings.smoothness * .1f / 100f, Time.deltaTime));
         }
         else rotationSpeed = Vector2.zero;
     }
 
-
-    private void DoZoom()
+    private void UpdateZoom()
     {
-        float absoluteTargetZoom = Mathf.Lerp(zoomSettings.zoomRange.x, zoomSettings.zoomRange.y, normalizedTargetZoom);
-
-        absoluteTargetZoom = Mathf.Lerp(absoluteTargetZoom, absoluteTargetZoom - Input.GetAxis("Mouse ScrollWheel") * zoomSettings.zoomSensitivity * (zoomSettings.zoomRange.y - zoomSettings.zoomRange.x), .3f);
-
+        AbsoluteTargetZoom = Mathf.Lerp(zoomSettings.zoomRange.x, zoomSettings.zoomRange.y, normalizedTargetZoom);
         switch (zoomSettings.collisionDetection)
         {
             case ZoomSettings.CollisionDetectionMethod.None:
@@ -158,24 +234,25 @@ public class OrbitCameraController : MonoBehaviour
                 //sweep test, if number of intersections is odd, camera is inside mesh
                 bool hitBackfaces = Physics.queriesHitBackfaces;
                 Physics.queriesHitBackfaces = true;
-                if (Physics.RaycastAll(transform.position - absoluteTargetZoom * transform.forward, Vector3.up, 1000f, zoomSettings.collisionLayerMask).Length % 2 == 1)
+                if (Physics.RaycastAll(transform.position - AbsoluteTargetZoom * transform.forward, Vector3.up, 1000f, zoomSettings.collisionLayerMask).Length % 2 == 1)
                 {
-                    if (Physics.Raycast(transform.position - absoluteTargetZoom * transform.forward, transform.forward, out RaycastHit backfaceHit, absoluteTargetZoom + 0.05f, zoomSettings.collisionLayerMask))
-                        absoluteTargetZoom = Vector3.Distance(backfaceHit.point, transform.position) - .05f;
+                    if (Physics.Raycast(transform.position - AbsoluteTargetZoom * transform.forward, transform.forward, out RaycastHit backfaceHit, AbsoluteTargetZoom + 0.05f, zoomSettings.collisionLayerMask))
+                        AbsoluteTargetZoom = Vector3.Distance(backfaceHit.point, transform.position) - .05f;
                 }
                 Physics.queriesHitBackfaces = hitBackfaces;
                 break;
 
             case ZoomSettings.CollisionDetectionMethod.RaycastFromCenter:
-                if (Physics.Raycast(transform.position, -transform.forward, out RaycastHit hit, absoluteTargetZoom, zoomSettings.collisionLayerMask))
+                if (Physics.Raycast(transform.position, -transform.forward, out RaycastHit hit, AbsoluteTargetZoom, zoomSettings.collisionLayerMask))
                 {
-                    absoluteTargetZoom = Vector3.Distance(hit.point, transform.position) - .05f;
+                    AbsoluteTargetZoom = Vector3.Distance(hit.point, transform.position) - .05f;
                 }
                 break;
         }
-        cameraComponent.transform.localPosition = Vector3.Lerp(cameraComponent.transform.localPosition, Vector3.back * absoluteTargetZoom, .3f);
-        normalizedTargetZoom = Mathf.InverseLerp(zoomSettings.zoomRange.x, zoomSettings.zoomRange.y, absoluteTargetZoom);
+        cameraComponent.transform.localPosition = Vector3.Lerp(cameraComponent.transform.localPosition, Vector3.back * AbsoluteTargetZoom, .3f);
+        //normalizedTargetZoom = Mathf.InverseLerp(zoomSettings.zoomRange.x, zoomSettings.zoomRange.y, absoluteTargetZoom);
     }
+
 }
 
 [System.Serializable]
@@ -185,14 +262,14 @@ public class MovementSettings
     public float movementSpeed = 3f;
 
     [Tooltip("Modifies speed when holding 'left-shift'")]
-    public float sprintSpeedMultiplier = 2f;
+    public float sprintSpeedMultiplier = 3f;
 
     [Tooltip("When disabled, constraints the controller to move only on collider surfaces")]
     public bool allowFlight = false;
 
     public enum SurfaceFollowType { None, MatchSurfaceInstant, MatchSurfaceSmooth }
     [Tooltip("Controls how the controller follows surface heights")]
-    public SurfaceFollowType surfaceFollowType;
+    public SurfaceFollowType surfaceFollowType = SurfaceFollowType.MatchSurfaceSmooth;
 
     public enum CollisionDetectionMethod { None, SweepTest }
     [Tooltip("When should the controller update the current target height?")]
@@ -202,7 +279,7 @@ public class MovementSettings
     public float surfaceCheckRange = 50f;
 
     [Tooltip("Layer mask containing only the ground layer(s)")]
-    public LayerMask groundMask;
+    public LayerMask groundMask = 1;
 
     [Tooltip("Delay with which the controller follows the surface if MatchSurfaceSmooth is active")]
     public float smoothness = 1f;
@@ -213,10 +290,10 @@ public class RotationSettings
 {
     public enum RotationEasing { None, Always, Subtle }
     [Tooltip("Controls, how the rotation input is smoothed")]
-    public RotationEasing easingBehaviour;
+    public RotationEasing easingBehaviour = RotationEasing.Subtle;
     public enum MouseButton { Left = 0, Right = 1, Middle = 2 }
     [Tooltip("Determines, what mouse button is responsible for rotating this camera")]
-    public MouseButton rotationButton;
+    public MouseButton rotationButton = MouseButton.Middle;
     [Tooltip("Speeds up the rotation")]
     public float rotationSensitivity = 24f;
     [Tooltip("The amount of smoothing applied to the rotation input")]
@@ -244,6 +321,6 @@ public class ZoomSettings
     [Tooltip("Speeds up zooming in and out")]
     public float zoomSensitivity = 4f;
     [Tooltip("Layermask used to determine, whether the camera is inside geometry or not")]
-    public LayerMask collisionLayerMask;
+    public LayerMask collisionLayerMask = 1;
 
 }
