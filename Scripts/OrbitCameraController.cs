@@ -52,6 +52,10 @@ public class OrbitCameraController : MonoBehaviour
         UpdateState();
         switch (state)
         {
+            case CameraControllerState.Free:
+                DoMouseWheelZoom();
+                DoKeyboardMovement();
+                break;
             case CameraControllerState.MovRot:
                 DoKeyboardMovement();
                 DoMouseWheelZoom();
