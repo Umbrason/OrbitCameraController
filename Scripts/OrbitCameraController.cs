@@ -170,7 +170,8 @@ public class OrbitCameraController : MonoBehaviour
 
     private void DoKeyboardMovement()
     {
-        float speed = movementSettings.movementSpeed * (Input.GetKey(KeyCode.LeftShift) ? movementSettings.sprintSpeedMultiplier : 1) * Time.deltaTime;
+        float zoomBasedSpeed = Mathf.Tan(cameraComponent.fieldOfView) * AbsoluteTargetZoom;
+        float speed = movementSettings.movementSpeed * (Input.GetKey(KeyCode.LeftShift) ? movementSettings.sprintSpeedMultiplier : 1) * Time.deltaTime * zoomBasedSpeed;
         Vector3 movementInput = Quaternion.Euler(0, CurrentRotation.y, 0) * new Vector3(Input.GetAxisRaw("Horizontal"), 0, Input.GetAxisRaw("Vertical"));
         transform.position += movementInput * speed;
     }
