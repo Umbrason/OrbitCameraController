@@ -71,6 +71,7 @@ public class OrbitCameraController : MonoBehaviour
                 break;
         }
         UpdateRotation();
+        UpdateControllerHeight();
         UpdateZoom();
         DecreaseRotationSpeed();
         oldMousePosition = Input.mousePosition;
@@ -116,11 +117,9 @@ public class OrbitCameraController : MonoBehaviour
         state = CameraControllerState.Free;
     }
 
-    private void DoKeyboardMovement()
+    private void UpdateControllerHeight()
     {
-        float speed = movementSettings.movementSpeed * (Input.GetKey(KeyCode.LeftShift) ? movementSettings.sprintSpeedMultiplier : 1) * Time.deltaTime;
-        Vector3 movementInput = Quaternion.Euler(0, CurrentRotation.y, 0) * new Vector3(Input.GetAxisRaw("Horizontal"), 0, Input.GetAxisRaw("Vertical"));
-        Vector3 desiredPosition = transform.position + movementInput * speed;
+        Vector3 desiredPosition = transform.position;
         Vector3 finalPosition = desiredPosition;
 
         //match surface height
@@ -167,6 +166,13 @@ public class OrbitCameraController : MonoBehaviour
             }
         }
         transform.position = desiredPosition;
+    }
+
+    private void DoKeyboardMovement()
+    {
+        float speed = movementSettings.movementSpeed * (Input.GetKey(KeyCode.LeftShift) ? movementSettings.sprintSpeedMultiplier : 1) * Time.deltaTime;
+        Vector3 movementInput = Quaternion.Euler(0, CurrentRotation.y, 0) * new Vector3(Input.GetAxisRaw("Horizontal"), 0, Input.GetAxisRaw("Vertical"));
+        transform.position += movementInput * speed;
     }
 
     private void DoMousePan()
