@@ -78,29 +78,40 @@ public class OrbitCameraController : MonoBehaviour
 
     private void UpdateState()
     {
+        bool panControlKey = Input.GetKey(KeyCode.LeftShift);
+        bool zoomControlKey = Input.GetKey(KeyCode.LeftControl);
+        bool movementInput = keyboardInput.sqrMagnitude > .01f;
+        bool anyControlKeyInput = panControlKey || zoomControlKey;
+        bool onlyMouseInput = IsMouseDown && !anyControlKeyInput;
+        bool anyInput = IsMouseDown || anyControlKeyInput;
+
         switch (state)
         {
+            case CameraControllerState.MovRot:
+                if (movementInput || panControlKey || IsMouseDown)
+                    return;
+                break;
             case CameraControllerState.Free:
-                if (keyboardInput.sqrMagnitude > .01f || (IsMouseDown && !(Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.LeftControl))))
+                if (movementInput || onlyMouseInput)
                 {
                     state = CameraControllerState.MovRot;
                     return;
                 }
+                if (panControlKey && IsMouseDown)
+                {
+                    state = CameraControllerState.Pan;
+                    return;
+                }
+                if (zoomControlKey && IsMouseDown)
+                {
+                    state = CameraControllerState.Zoom;
+                    return;
+                }
                 break;
-            case CameraControllerState.MovRot:
-                if (IsMouseDown || keyboardInput.sqrMagnitude < .1f || Input.GetKey(KeyCode.LeftShift))                                    
+            default:
+                if (anyInput)
                     return;
                 break;
-        }
-        if (IsMouseDown && Input.GetKey(KeyCode.LeftShift))
-        {
-            state = CameraControllerState.Pan;
-            return;
-        }
-        if (IsMouseDown && Input.GetKey(KeyCode.LeftControl))
-        {
-            state = CameraControllerState.Zoom;
-            return;
         }
         state = CameraControllerState.Free;
     }
