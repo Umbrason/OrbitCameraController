@@ -34,8 +34,9 @@ Otherwise the camera will always change height to **match the heighest point ins
 
 **Rotation**\
 ![ControllerSettingsRotation](https://user-images.githubusercontent.com/45980080/118819737-ebd30a80-b8b5-11eb-9b39-b03ce75f80d0.png)\
-Of the rotation settings the most interesting option is the **'Easing Behaviour'** which changes, when smoothing is to the rotation speed of the camera.\
-**'Subtle'** means that smoothing is only applied, when the player is **not** holding the 'rotation button', allowing for a **smooth stop** of the camera rotation.
+When the **'Contrain X'** or **'Constrain Y'** options are ticked, the camera rotation will be limited to the specifed ranges on their respective axis.\
+Of the rotation settings the most interesting option is the **'Easing Behaviour'** which changes, when smoothing is to the rotation speed of the camera.
+The option **'Subtle'** means that smoothing is only applied, when the player is **not** holding the 'rotation button', allowing for a **smooth stop** of the camera rotation.
 
 **Zoom**\
 ![ControllerSettingsZoom](https://user-images.githubusercontent.com/45980080/118819791-f8576300-b8b5-11eb-8c00-5d1f9ae0cfc2.PNG)\
