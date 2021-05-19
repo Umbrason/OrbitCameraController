@@ -135,7 +135,7 @@ public class OrbitCameraController : MonoBehaviour
                     case MovementSettings.CollisionDetectionMethod.SweepTest:
                         bool hitBackfaces = Physics.queriesHitBackfaces;
                         Physics.queriesHitBackfaces = true;
-                        desiredPosition += Vector3.Up * 0.0005f;
+                        desiredPosition += Vector3.up * 0.0005f;
                         if (Physics.RaycastAll(desiredPosition, Vector3.up, movementSettings.surfaceCheckRange, movementSettings.groundMask).Length % 2 == 1)
                         {
                             Physics.queriesHitBackfaces = false;
